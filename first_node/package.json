@@ -1,0 +1,15 @@
+{
+  "name": "first_node",
+  "version": "1.0.0",
+  "description": "Aula de NodeJS e fundamentos do Back End",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "returnBrazil": "clear && node index.js braz",
+    "returnFirstLetterC": "clear && node pratica2.js c"
+  },
+  "keywords": [],
+  "author": "Jair Damian Martinez",
+  "license": "ISC"
+}
