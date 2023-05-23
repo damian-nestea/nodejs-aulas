@@ -1,8 +1,6 @@
 /* Jogo par impar */
 
-function getRndInteger(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) ) + min;
-  }
+import { getRndInteger } from './get-rnd-integer.js'
 
 const parOuImparUsuario = process.argv[2];
 const numeroUsuario = Number(process.argv[3]);
