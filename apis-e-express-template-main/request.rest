@@ -1,0 +1,7 @@
+### Get all courses
+Send Request
+GET http://localhost:3003/courses 
+
+### Get course by Id
+Send Request
+GET http://localhost:3003/courses/search?name=s
