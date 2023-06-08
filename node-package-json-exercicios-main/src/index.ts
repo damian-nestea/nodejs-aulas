@@ -126,3 +126,64 @@ console.log(getAllProducts());
 
 // Chamada de função para procurar produto por nome
 console.log(searchProductsByName("88"));
+
+// Delete user by Id
+app.delete("/users/:id", (req: Request, res: Response) => {
+  const id = req.params.id;
+  const indexUserToDelete = users.findIndex((user) => {
+    return user.id === id;
+  });
+  if (indexUserToDelete >= 0) {
+    users.splice(indexUserToDelete, 1);
+    res.status(200).send("Usuário deletado com sucesso.");
+  } else {
+    res.status(400).send("Parâmetros necessários não enviados ou incorretos.");
+  }
+});
+
+// Delete product by Id
+app.delete("/products/:id", (req: Request, res: Response) => {
+  const id = req.params.id;
+  const indexProductToDelete = products.findIndex((product) => {
+    return product.id === id;
+  });
+  if (indexProductToDelete >= 0) {
+    products.splice(indexProductToDelete, 1);
+    res.status(200).send("Produto deletado com sucesso.");
+  } else {
+    res.status(400).send("Parâmetros necessários não enviados ou incorretos.");
+  }
+});
+
+// Edit a product
+app.put("/products/:id", (req: Request, res: Response) => {
+  const idProductToEdit = req.params.id;
+  const newId = req.body.id as string | undefined;
+  const newName = req.body.name as string | undefined;
+  const newPrice = req.body.price as number | undefined;
+  const newDescription = req.body.description as string | undefined;
+  const newImageUrl = req.body.imageUrl as string | undefined;
+
+  const productToEdit = products.find((product) => {
+    return product.id === idProductToEdit;
+  });
+  if (
+    productToEdit &&
+    (newId ||
+      newName ||
+      newPrice ||
+      newPrice === 0 ||
+      newDescription ||
+      newImageUrl)
+  ) {
+    productToEdit.id = newId || productToEdit.id;
+    productToEdit.name = newName || productToEdit.name;
+    productToEdit.price =
+      newPrice === 0 || newPrice ? newPrice : productToEdit.price;
+    productToEdit.description = newDescription || productToEdit.description;
+    productToEdit.imageUrl = newImageUrl || productToEdit.imageUrl;
+    res.status(200).send("Produto atualizado com sucesso.");
+  } else {
+    res.status(404).send("Verifique a informação da requisição.");
+  }
+});
