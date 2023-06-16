@@ -1,13 +1,30 @@
-# Exercício - Node e package.json
+# API Labecommerce
 
-ATENÇÃO! Não forke nem clone esse repositório. Ele serve apenas como enunciado!<br><br>
-<strong>Você deve criar seu próprio repo pessoal chamado labecommerce-backend. Evite trabalhar na main e crie branches para organizar cada nova implementação ou refatoração. A de hoje por exemplo, pode se chamar node-package-json.</strong>
-### Comando para criar a branch e já entrar nela
-```
-git checkout -b node-package-json
-```
+API para controle de usuários e produtos do projeto labecommerce. 
 
-## Relembrando
+> :construction: Project in progress... :construction:
 
-O objetivo dos exercícios é desenvolver o próprio projeto Labecommerce - Backend conforme o avanço das aulas.
-A cada atividade da tarde iremos implementar ou refatorar partes do projeto, além de praticar lógicas por fora (como o de hoje).
+# :hammer: What you can do in this project
+
+- `1`: Ver todos os usuários da API.
+- `2`: Ver todos os produtos da API.
+- `3`: Procurar um produto pelo nome.
+- `4`: Criar um usuário.
+- `5`: Criar um produto.
+- `4`: Apagar um usuário da API pelo ID.
+- `4`: Apagar um produto da API pelo ID.
+- `4`: Editar um produto baseado no seu ID.
+
+### 🛠 Used technologies
+
+- Node.js
+- Express.js
+
+
+### API Documentation
+
+https://documenter.getpostman.com/view/26594562/2s93shz9bz
+
+### Autor
+
+Developed by Jair Damián Martínez Bautista
