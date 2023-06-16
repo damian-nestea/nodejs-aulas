@@ -10,6 +10,7 @@ import {
   searchProductsByName,
 } from "./database";
 import { TProduct, TUser } from "./types";
+import { throws } from "assert";
 
 /* EXERCìCIOS CRIAÇÃO API */
 const app = express();
@@ -28,12 +29,20 @@ app.get("/ping", (req: Request, res: Response) => {
 
 /* Get all users */
 app.get("/users", (req: Request, res: Response) => {
-  res.status(200).send(users);
+  try {
+    res.status(200).send(users);
+  } catch (error) {
+    res.status(400).send("Erro na requisição.");
+  }
 });
 
 /* Get all products */
 app.get("/products", (req: Request, res: Response) => {
-  res.status(200).send(products);
+  try {
+    res.status(200).send(products);
+  } catch (error) {
+    res.status(400).send("Erro na requisição");
+  }
 });
 
 /* Get product by name */
@@ -47,13 +56,20 @@ app.get("/product", (req: Request, res: Response) => {
 
 /* Create user */
 app.post("/users", (req: Request, res: Response) => {
-  const {
-    id,
-    name,
-    email,
-    password,
-  }: { id: string; name: string; email: string; password: string } = req.body;
-  if (id && name && email && password) {
+  try {
+    const {
+      id,
+      name,
+      email,
+      password,
+    }: { id: string; name: string; email: string; password: string } = req.body;
+
+    /* Verifica se tem todos os dados necessários para criar o usuário */
+    if (!id || !name || !email || !password) {
+      res.status(400);
+      throw new Error("Dados faltantes para criar o usuário. Verifique-os.");
+    }
+
     const newUser: TUser = {
       id,
       name,
@@ -61,30 +77,56 @@ app.post("/users", (req: Request, res: Response) => {
       password,
       createdAt: new Date().toISOString(),
     };
+    /* Verifica se ID ou EMAIL já existem em USERS */
+    const idEEmailIguais = users.some((user) => {
+      return user.id === newUser.id || user.email === newUser.email;
+    });
+
+    if (idEEmailIguais) {
+      res.status(400);
+      throw new Error("Id ou Email já existentes.");
+    }
+
     users.push(newUser);
     res.status(201).send("Cadastro realizado com sucesso");
-    console.log(users);
-  } else {
-    res.status(400).send("Requisição sem os dados necessários");
+  } catch (error) {
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
   }
 });
 
 /* Create product */
 app.post("/products", (req: Request, res: Response) => {
-  const {
-    id,
-    name,
-    price,
-    description,
-    imageUrl,
-  }: {
-    id: string;
-    name: string;
-    price: number;
-    description: string;
-    imageUrl: string;
-  } = req.body;
-  if (id && name && price && description && imageUrl) {
+  try {
+    const {
+      id,
+      name,
+      price,
+      description,
+      imageUrl,
+    }: {
+      id: string;
+      name: string;
+      price: number;
+      description: string;
+      imageUrl: string;
+    } = req.body;
+
+    /* Verificando se existem todos os dados */
+    if (!id || !name || price === undefined || !description || !imageUrl) {
+      res.status(400);
+      throw new Error("Dados faltantes para criar produto. Verifique-os.");
+    }
+
+    /* Verificando se preço é número */
+    if (typeof price !== "number") {
+      res.status(422);
+      throw new Error("O preço deve ser um número.");
+    }
+
     const newProduct: TProduct = {
       id,
       name,
@@ -92,11 +134,24 @@ app.post("/products", (req: Request, res: Response) => {
       description,
       imageUrl,
     };
+
+    /* Verifica se ID já existe em Products */
+    const idExistente = products.some((product) => {
+      return product.id === newProduct.id;
+    });
+    if (idExistente) {
+      res.status(400);
+      throw new Error("ID já existe.");
+    }
+
     products.push(newProduct);
     res.status(201).send("Produto cadastrado com sucesso");
-    console.log(products);
-  } else {
-    res.status(400).send("Requisição sem os dados necessários");
+  } catch (error) {
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
   }
 });
 
@@ -129,53 +184,84 @@ console.log(searchProductsByName("88"));
 
 // Delete user by Id
 app.delete("/users/:id", (req: Request, res: Response) => {
-  const id = req.params.id;
-  const indexUserToDelete = users.findIndex((user) => {
-    return user.id === id;
-  });
-  if (indexUserToDelete >= 0) {
+  try {
+    const id = req.params.id;
+    /* Verifica se user existe */
+    const indexUserToDelete = users.findIndex((user) => {
+      return user.id === id;
+    });
+    if (indexUserToDelete < 0) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
     users.splice(indexUserToDelete, 1);
     res.status(200).send("Usuário deletado com sucesso.");
-  } else {
-    res.status(400).send("Parâmetros necessários não enviados ou incorretos.");
+  } catch (error) {
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
   }
 });
 
 // Delete product by Id
 app.delete("/products/:id", (req: Request, res: Response) => {
-  const id = req.params.id;
-  const indexProductToDelete = products.findIndex((product) => {
-    return product.id === id;
-  });
-  if (indexProductToDelete >= 0) {
+  try {
+    const id = req.params.id;
+    /* Verifica se existe o product */
+    const indexProductToDelete = products.findIndex((product) => {
+      return product.id === id;
+    });
+    if (indexProductToDelete < 0) {
+      res.status(404);
+      throw new Error("Produto não encontrado");
+    }
+
     products.splice(indexProductToDelete, 1);
     res.status(200).send("Produto deletado com sucesso.");
-  } else {
-    res.status(400).send("Parâmetros necessários não enviados ou incorretos.");
+  } catch (error) {
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
   }
 });
 
 // Edit a product
 app.put("/products/:id", (req: Request, res: Response) => {
-  const idProductToEdit = req.params.id;
-  const newId = req.body.id as string | undefined;
-  const newName = req.body.name as string | undefined;
-  const newPrice = req.body.price as number | undefined;
-  const newDescription = req.body.description as string | undefined;
-  const newImageUrl = req.body.imageUrl as string | undefined;
+  try {
+    const idProductToEdit = req.params.id;
+    const newId = req.body.id as string | undefined;
+    const newName = req.body.name as string | undefined;
+    const newPrice = req.body.price as number | undefined;
+    const newDescription = req.body.description as string | undefined;
+    const newImageUrl = req.body.imageUrl as string | undefined;
 
-  const productToEdit = products.find((product) => {
-    return product.id === idProductToEdit;
-  });
-  if (
-    productToEdit &&
-    (newId ||
-      newName ||
-      newPrice ||
-      newPrice === 0 ||
-      newDescription ||
-      newImageUrl)
-  ) {
+    /* Verifica se existe o produto a editar */
+    const productToEdit = products.find((product) => {
+      return product.id === idProductToEdit;
+    });
+    if (!productToEdit) {
+      res.status(404);
+      throw new Error("Produto não encontrado");
+    }
+
+    /* Verifica se informação para edição foi recebida */
+    if (
+      !newId &&
+      !newName &&
+      !newPrice &&
+      newPrice !== 0 &&
+      !newDescription &&
+      !newImageUrl
+    ) {
+      res.status(400);
+      throw new Error("Dados para edição faltantes. Verifique-os.");
+    }
+
     productToEdit.id = newId || productToEdit.id;
     productToEdit.name = newName || productToEdit.name;
     productToEdit.price =
@@ -183,7 +269,11 @@ app.put("/products/:id", (req: Request, res: Response) => {
     productToEdit.description = newDescription || productToEdit.description;
     productToEdit.imageUrl = newImageUrl || productToEdit.imageUrl;
     res.status(200).send("Produto atualizado com sucesso.");
-  } else {
-    res.status(404).send("Verifique a informação da requisição.");
+  } catch (error) {
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
   }
 });
