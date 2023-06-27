@@ -45,21 +45,25 @@ VALUES
 -- criação tabela purchases
 CREATE TABLE purchases(
   id TEXT PRIMARY KEY UNIQUE NOT NULL,
+  buyer TEXT NOT NULL,
   total_price REAL NOT NULL,
-  paid INTEGER NOT NULL,
   created_at TEXT,
-  buyer_id TEXT NOT NULL
+  FOREIGN KEY (buyer) REFERENCES users(id)
 );
 
 -- população tabela purchases
-INSERT INTO purchases(id,total_price, paid, created_at,buyer_id)
-VALUES("p001", 1200, 0,"","u001");
-
-INSERT INTO purchases(id,total_price, paid, created_at,buyer_id)
+INSERT INTO purchases(id,buyer,total_price, created_at)
 VALUES
-  ("p002", 500, 0,"","u001"),
-  ("p003", 700, 0,"","u002"),
-  ("p004", 700, 0,"","u002");
+  ("p001", "u001", 100, DATETIME("now")),
+  ("p002", "u002", 1000, DATETIME("now")),
+  ("p003", "u003", 500, DATETIME("now")),
+  ("p004", "u004", 180, DATETIME("now")),
+  ("p005", "u005", 290, DATETIME("now")),
+  ("p006", "u006", 135, DATETIME("now")),
+  ("p007", "u001", 2000, DATETIME("now")),
+  ("p008", "u002", 200, DATETIME("now")),
+  ("p009", "u003", 80, DATETIME("now")),
+  ("p010", "u004", 88, DATETIME("now"));
 
 -- Seleção de users (getAllUsers)
 SELECT * FROM users;
@@ -91,8 +95,19 @@ SET
   imageUrl = "https://picsum.photos/seed/Mouse%20gamer/400"
 WHERE id = "prod001";
 
+-- Consulta com junção INNER JOIN
+SELECT 
+  purchases.id AS idPurchase,
+  purchases.buyer AS idBuyer,
+  users.name AS buyerName,
+  users.email AS buyerEmail,
+  purchases.total_price AS totalPrice,
+  purchases.created_at AS date
+FROM purchases INNER JOIN users
+ON purchases.buyer = users.id;
+
 -- manipulação tabela purchases
-UPDATE purchases
+/* UPDATE purchases
   SET created_at = DATETIME('now')
   WHERE id = 'p004';
 
@@ -112,4 +127,4 @@ SELECT * FROM purchases
   WHERE buyer_id = 'u001';
 
 SELECT SUM(total_price) FROM purchases
-  WHERE buyer_id = 'u002';
+  WHERE buyer_id = 'u002'; */
