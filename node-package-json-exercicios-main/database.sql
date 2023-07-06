@@ -49,6 +49,8 @@ CREATE TABLE purchases(
   total_price REAL NOT NULL,
   created_at TEXT,
   FOREIGN KEY (buyer) REFERENCES users(id)
+    ON UPDATE CASCADE
+    ON DELETE CASCADE
 );
 
 -- população tabela purchases
@@ -106,25 +108,48 @@ SELECT
 FROM purchases INNER JOIN users
 ON purchases.buyer = users.id;
 
--- manipulação tabela purchases
-/* UPDATE purchases
-  SET created_at = DATETIME('now')
-  WHERE id = 'p004';
+-- Criação de tabela de relação
+CREATE TABLE purchases_products(
+  purchase_id TEXT NOT NULL,
+  product_id TEXT NOT NULL,
+  quantity INTEGER NOT NULL
+);
 
-UPDATE purchases
-  SET created_at = DATETIME('now')
-  WHERE id = 'p001';
+-- Realizando compras
+INSERT INTO purchases(id,buyer,total_price, created_at)
+VALUES
+  ("c001", "u001", 200, DATETIME("now"));
 
-UPDATE purchases
-  SET created_at = DATETIME('now')
-  WHERE id = 'p002';
+INSERT INTO purchases(id,buyer,total_price, created_at)
+VALUES
+  ("c002", "u002", 500, DATETIME("now")),
+  ("c003", "u003", 1000, DATETIME("now"));
 
-UPDATE purchases
-  SET created_at = DATETIME('now')
-  WHERE id = 'p003';
+-- Realizando compras purchases_products
+INSERT INTO purchases_products(purchase_id, product_id, quantity)
+VALUES
+  ("c001" , "prod001" , 1 ),
+  ("c001" , "prod002" , 1 ),
+  ("c002" , "prod003" , 2 ),
+  ("c002" , "prod002" , 1 ),
+  ("c003" , "prod001" , 2 ),
+  ("c003" , "prod003" , 2 );
 
-SELECT * FROM purchases
-  WHERE buyer_id = 'u001';
 
-SELECT SUM(total_price) FROM purchases
-  WHERE buyer_id = 'u002'; */
+-- Consulta de compra juntando as 3 tabelas
+SELECT
+  purchases_products.purchase_id AS purchaseId,
+  purchases_products.product_id AS productsId,
+  products.name AS productName,
+  purchases_products.quantity,
+  purchases.total_price AS totalPrice,
+  users.id AS userId,
+  users.name AS userName,
+  users.email
+FROM purchases_products
+INNER JOIN purchases
+INNER JOIN products
+INNER JOIN users
+ON purchases_products.purchase_id = purchases.id 
+AND purchases_products.product_id = products.id
+AND purchases.buyer = users.id;
