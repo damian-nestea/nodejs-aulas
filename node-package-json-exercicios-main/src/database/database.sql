@@ -38,7 +38,6 @@ INSERT INTO products(id, name, price, description, imageUrl)
 VALUES
   ("prod001", "Mouse", 250, "Melhor mouse da história da computação", "https://picsum.photos/seed/Mouse%20gamer/400"),
   ("prod002", "Teclado", 550, "Melhor teclado da história da computação", "https://picsum.photos/seed/Mouse%20gamer/400"),
-
   ("prod003", "SSD Gamer", 350, "Acelere seu sistema com o SSD.", "https://picsum.photos/seed/Monitor/400");
 
 
