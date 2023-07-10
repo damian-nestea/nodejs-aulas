@@ -10,7 +10,7 @@ import {
   searchProductsByName,
 } from "./database";
 import { TProduct, TUser } from "./types";
-import { throws } from "assert";
+import { db } from "./database/knex";
 
 /* EXERCìCIOS CRIAÇÃO API */
 const app = express();
@@ -28,34 +28,74 @@ app.get("/ping", (req: Request, res: Response) => {
 });
 
 /* Get all users */
-app.get("/users", (req: Request, res: Response) => {
+app.get("/users", async (req: Request, res: Response) => {
   try {
-    res.status(200).send(users);
+    /* const result = await db.raw(`
+      SELECT * FROM users;
+    `); */
+    const result = await db("users");
+    if (!result) {
+      res.status(400);
+      throw new Error("Erro na requisição");
+    }
+    res.status(200).send(result);
   } catch (error) {
-    res.status(400).send("Erro na requisição.");
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
   }
 });
 
 /* Get all products */
-app.get("/products", (req: Request, res: Response) => {
+app.get("/products", async (req: Request, res: Response) => {
   try {
-    res.status(200).send(products);
+    /* const result = await db.raw(`
+      SELECT * FROM products;
+    `); */
+    const result = await db("products");
+    if (!result) {
+      res.status(400);
+      throw new Error("Erro na requisição");
+    }
+    res.status(200).send(result);
   } catch (error) {
-    res.status(400).send("Erro na requisição");
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
   }
 });
 
 /* Get product by name */
-app.get("/product", (req: Request, res: Response) => {
-  const name = req.query.name as string;
-  const response: TProduct[] = products.filter((product) => {
+app.get("/products", async (req: Request, res: Response) => {
+  try {
+    const name = req.query.name as string;
+    /*  const result = await db.raw(`
+    SELECT * FROM products
+    WHERE products.name LIKE "%${name}%";
+  `); */
+    const result = await db("products").whereLike("products.name", `%${name}%`);
+    console.log(result);
+    res.status(200).send(result);
+  } catch (error) {
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
+  }
+
+  /* const response: TProduct[] = products.filter((product) => {
     return product.name.toLowerCase().includes(name.toLowerCase());
-  });
-  res.status(200).send(response ? response : products);
+  }); 
+  res.status(200).send(response ? response : products);*/
 });
 
 /* Create user */
-app.post("/users", (req: Request, res: Response) => {
+app.post("/users", async (req: Request, res: Response) => {
   try {
     const {
       id,
@@ -87,7 +127,12 @@ app.post("/users", (req: Request, res: Response) => {
       throw new Error("Id ou Email já existentes.");
     }
 
-    users.push(newUser);
+    /* await db.raw(`
+      INSERT INTO users(id,name, email, password,createdAt)
+      VALUES
+      ("${id}","${name}", "${email}", "${password}","${new Date().toISOString()}");
+    `); */
+    await db("users").insert(newUser);
     res.status(201).send("Cadastro realizado com sucesso");
   } catch (error) {
     if (error instanceof Error) {
@@ -99,7 +144,7 @@ app.post("/users", (req: Request, res: Response) => {
 });
 
 /* Create product */
-app.post("/products", (req: Request, res: Response) => {
+app.post("/products", async (req: Request, res: Response) => {
   try {
     const {
       id,
@@ -144,7 +189,12 @@ app.post("/products", (req: Request, res: Response) => {
       throw new Error("ID já existe.");
     }
 
-    products.push(newProduct);
+    /* await db.raw(`
+      INSERT INTO products(id, name, price, description, imageUrl)
+      VALUES
+      ("${id}", "${name}", ${price}, "${description}", "${imageUrl}");
+    `); */
+    await db("products").insert(newProduct);
     res.status(201).send("Produto cadastrado com sucesso");
   } catch (error) {
     if (error instanceof Error) {
@@ -183,11 +233,11 @@ console.log(getAllProducts());
 console.log(searchProductsByName("88"));
 
 // Delete user by Id
-app.delete("/users/:id", (req: Request, res: Response) => {
+app.delete("/users/:id", async (req: Request, res: Response) => {
   try {
-    const id = req.params.id;
+    const idToDelete = req.params.id;
     /* Verifica se user existe */
-    const indexUserToDelete = users.findIndex((user) => {
+    /* const indexUserToDelete = users.findIndex((user) => {
       return user.id === id;
     });
     if (indexUserToDelete < 0) {
@@ -196,7 +246,18 @@ app.delete("/users/:id", (req: Request, res: Response) => {
     }
 
     users.splice(indexUserToDelete, 1);
-    res.status(200).send("Usuário deletado com sucesso.");
+    res.status(200).send("Usuário deletado com sucesso."); */
+    if (!idToDelete) {
+      res.status(400);
+      throw new Error("Sem dados");
+    }
+    const [userExists] = await db("users").where({ id: idToDelete });
+    if (!userExists) {
+      res.status(404);
+      throw new Error("Usuário não existe");
+    }
+    await db("users").del().where({ id: idToDelete });
+    res.status(200).send("Usuário deletado com sucesso!");
   } catch (error) {
     if (error instanceof Error) {
       res.send(error.message);
@@ -207,19 +268,29 @@ app.delete("/users/:id", (req: Request, res: Response) => {
 });
 
 // Delete product by Id
-app.delete("/products/:id", (req: Request, res: Response) => {
+app.delete("/products/:id", async (req: Request, res: Response) => {
   try {
-    const id = req.params.id;
+    const idToDelete = req.params.id;
     /* Verifica se existe o product */
-    const indexProductToDelete = products.findIndex((product) => {
+    /* const indexProductToDelete = products.findIndex((product) => {
       return product.id === id;
     });
     if (indexProductToDelete < 0) {
       res.status(404);
       throw new Error("Produto não encontrado");
     }
+    products.splice(indexProductToDelete, 1); */
+    if (!idToDelete) {
+      res.status(400);
+      throw new Error("Sem dados");
+    }
+    const [productExists] = await db("products").where({ id: idToDelete });
+    if (!productExists) {
+      res.status(404);
+      throw new Error("Produto não existe");
+    }
+    await db("products").del().where({ id: idToDelete });
 
-    products.splice(indexProductToDelete, 1);
     res.status(200).send("Produto deletado com sucesso.");
   } catch (error) {
     if (error instanceof Error) {
@@ -231,7 +302,7 @@ app.delete("/products/:id", (req: Request, res: Response) => {
 });
 
 // Edit a product
-app.put("/products/:id", (req: Request, res: Response) => {
+app.put("/products/:id", async (req: Request, res: Response) => {
   try {
     const idProductToEdit = req.params.id;
     const newId = req.body.id as string | undefined;
@@ -241,13 +312,13 @@ app.put("/products/:id", (req: Request, res: Response) => {
     const newImageUrl = req.body.imageUrl as string | undefined;
 
     /* Verifica se existe o produto a editar */
-    const productToEdit = products.find((product) => {
+    /* const productToEdit = products.find((product) => {
       return product.id === idProductToEdit;
     });
     if (!productToEdit) {
       res.status(404);
       throw new Error("Produto não encontrado");
-    }
+    } */
 
     /* Verifica se informação para edição foi recebida */
     if (
@@ -262,13 +333,182 @@ app.put("/products/:id", (req: Request, res: Response) => {
       throw new Error("Dados para edição faltantes. Verifique-os.");
     }
 
-    productToEdit.id = newId || productToEdit.id;
+    /* productToEdit.id = newId || productToEdit.id;
     productToEdit.name = newName || productToEdit.name;
     productToEdit.price =
       newPrice === 0 || newPrice ? newPrice : productToEdit.price;
     productToEdit.description = newDescription || productToEdit.description;
-    productToEdit.imageUrl = newImageUrl || productToEdit.imageUrl;
+    productToEdit.imageUrl = newImageUrl || productToEdit.imageUrl; */
+
+    const [product] = await db.raw(`
+    SELECT * FROM products
+    WHERE id = "${idProductToEdit}";
+  `); // desestruturamos para encontrar o primeiro item do array
+
+    // se existir, aí sim podemos editá-lo
+    if (product) {
+      await db.raw(`
+        UPDATE products
+        SET
+          id = "${newId || product.id}",
+          name = "${newName || product.name}",
+          price = ${newPrice === 0 || newPrice ? newPrice : product.price},
+          description = "${newDescription || product.description}",
+          imageUrl = "${newImageUrl || product.imageUrl}"
+        WHERE
+          id = "${idProductToEdit}";
+      `);
+    } else {
+      res.status(404);
+      throw new Error("'id' não encontrada");
+    }
+
     res.status(200).send("Produto atualizado com sucesso.");
+  } catch (error) {
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
+  }
+});
+
+/* Create purchase */
+app.post("/purchases", async (req: Request, res: Response) => {
+  try {
+    const id = req.body.id as string;
+    const buyer = req.body.buyer as string;
+    const totalPrice = req.body.totalPrice as number;
+    const products = req.body.products;
+
+    if (!id || !buyer || !products || totalPrice <= 0) {
+      res.status(400);
+      throw new Error("Dados faltantes. Confira!");
+    }
+    // Conferência id purchase
+    const currentPurchases = await db.raw(`
+      SELECT * FROM purchases
+      WHERE id = "${id}";
+    `);
+
+    if (currentPurchases.length > 0) {
+      res.status(400);
+      throw new Error("'id' já existente.");
+    }
+
+    // Conferência id buyer
+    const userExists = await db.raw(`
+      SELECT * FROM users
+      WHERE id = "${buyer}";
+    `);
+
+    if (userExists.length <= 0) {
+      res.status(404);
+      throw new Error("Usuário não existe. Verifiquye o Id do comprador");
+    }
+
+    if (typeof totalPrice !== "number") {
+      res.status(422);
+      throw new Error("'totalPrice' deve ser um número");
+    }
+
+    // Conferência products
+    if (!Array.isArray(products)) {
+      res.status(422);
+      throw new Error("'products' deve ser um array");
+    }
+
+    products.forEach(async (product) => {
+      const productId = await db.raw(`
+        SELECT * FROM products
+        WHERE id = "${product.id}";
+      `);
+      if (productId.length <= 0) {
+        res.status(404);
+        throw new Error("'id' de produto inválido");
+      }
+
+      await db.raw(`
+        INSERT INTO purchases_products(purchase_id, product_id, quantity)
+        VALUES
+          ("${id}" , "${product.id}" , ${product.quantity} );
+      `);
+    });
+
+    await db.raw(`
+    INSERT INTO purchases(id,buyer,total_price, created_at)
+    VALUES
+      ("${id}", "${buyer}", ${totalPrice}, DATETIME("now"));
+    `);
+
+    res.status(200).send("Deu certo");
+  } catch (error) {
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
+  }
+});
+
+/* delete purchase by id */
+app.delete("/purchases/:id", async (req: Request, res: Response) => {
+  try {
+    const idToDelete = req.params.id as string;
+    // validação: checar se o item existe antes de deletá-lo
+    const [purchase] = await db.raw(`
+    SELECT * FROM purchases
+    WHERE id = "${idToDelete}";
+  `); // desestruturamos para encontrar o primeiro item do array
+
+    if (!purchase) {
+      res.status(404);
+      throw new Error("'id' não encontrada");
+    }
+
+    // se chegou até aqui é porque podemos deletar
+    await db.raw(`
+    DELETE FROM purchases
+    WHERE id = "${idToDelete}";
+  `);
+
+    await db.raw(`
+    DELETE FROM purchases_products
+    WHERE purchase_id = "${idToDelete}";
+  `);
+
+    res.status(200).send({ message: "User deletado com sucesso" });
+  } catch (error) {
+    if (error instanceof Error) {
+      res.send(error.message);
+    } else {
+      res.status(500).send("Unexpected Error");
+    }
+  }
+});
+
+/* Get purchase by id */
+app.get("/purchases/:id", async (req: Request, res: Response) => {
+  try {
+    const idToFind = req.params.id as string;
+
+    const [result] = await db("purchases")
+      .select(
+        "purchases.id AS purchaseId",
+        "purchases.buyer AS buyerId",
+        "users.name AS buyerName",
+        "users.email AS buyerEmail",
+        "purchases.total_price AS totalPrice",
+        "purchases.created_at AS createdAt"
+      )
+      .innerJoin("users", "purchases.buyer", "=", "users.id")
+      .where("purchases.id", "=", idToFind);
+
+    if (!result) {
+      res.status(404);
+      throw new Error("Compra não encontrada");
+    }
+    res.status(200).send(result);
   } catch (error) {
     if (error instanceof Error) {
       res.send(error.message);
